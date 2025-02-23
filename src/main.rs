@@ -161,7 +161,26 @@ impl AESState {
     }
 
     fn shift_rows(&mut self) {
-        todo!()
+        let mut rows = [
+            u32::from_be_bytes([self.raw[0], self.raw[1], self.raw[2], self.raw[3]]),
+            u32::from_be_bytes([self.raw[4], self.raw[5], self.raw[6], self.raw[7]]),
+            u32::from_be_bytes([self.raw[8], self.raw[9], self.raw[10], self.raw[11]]),
+            u32::from_be_bytes([self.raw[12], self.raw[13], self.raw[14], self.raw[15]]),
+        ];
+
+        rows[1] = rows[1].rotate_left(8);
+        rows[2] = rows[2].rotate_left(16);
+        rows[3] = rows[3].rotate_left(24);
+
+        let new_rows = [
+            rows[0].to_be_bytes(),
+            rows[1].to_be_bytes(),
+            rows[2].to_be_bytes(),
+            rows[3].to_be_bytes(),
+        ]
+        .concat();
+
+        self.raw.copy_from_slice(&new_rows);
     }
 
     fn mix_columns(&mut self) {
@@ -250,6 +269,25 @@ mod tests {
             0xE5, 0x30,
         ];
         state.sub_bytes();
+
+        assert_eq!(state.raw, result);
+    }
+
+    #[test]
+    fn test_aes_state_shift_rows() {
+        let mut state = AESState {
+            raw: [
+                0xD4, 0xE0, 0xB8, 0x1E, 0x27, 0xBF, 0xB4, 0x41, 0x11, 0x98, 0x5D, 0x52, 0xAE, 0xF1,
+                0xE5, 0x30,
+            ],
+        };
+
+        let result: [u8; 16] = [
+            0xD4, 0xE0, 0xB8, 0x1E, 0xBF, 0xB4, 0x41, 0x27, 0x5D, 0x52, 0x11, 0x98, 0x30, 0xAE,
+            0xF1, 0xE5,
+        ];
+
+        state.shift_rows();
 
         assert_eq!(state.raw, result);
     }
