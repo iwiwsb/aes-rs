@@ -125,13 +125,9 @@ fn key_expansion<const NK: usize, const S: usize>(key: [u32; NK]) -> [u32; S] {
     for i in NK..S {
         temp = w[i - 1];
         if i % NK == 0 {
-            let rot_word = temp.rotate_left(8);
-            let sub = sub_word(rot_word);
-            let rcon = ROUND_CONSTANTS[(i - 1) / NK];
-            temp = sub ^ rcon;
+            temp = sub_word(temp.rotate_left(8)) ^ ROUND_CONSTANTS[(i - 1) / NK];
         } else if NK > 6 && i % NK == 4 {
-            let sub = sub_word(temp);
-            temp = sub;
+            temp = sub_word(temp);
         }
         w[i] = w[i - NK] ^ temp;
     }
@@ -190,5 +186,25 @@ mod tests {
             0x448C773C, 0x8ECC7204, 0x01002202,
         ];
         assert_eq!(key_expansion_192(key), result)
+    }
+
+    #[test]
+    fn test_key_expansion_256() {
+        let key: [u32; 8] = [
+            0x603DEB10, 0x15CA71BE, 0x2B73AEF0, 0x857D7781, 0x1F352C07, 0x3B6108D7, 0x2D9810A3,
+            0x0914DFF4,
+        ];
+        let result: [u32; 60] = [
+            0x603DEB10, 0x15CA71BE, 0x2B73AEF0, 0x857D7781, 0x1F352C07, 0x3B6108D7, 0x2D9810A3,
+            0x0914DFF4, 0x9BA35411, 0x8E6925AF, 0xA51A8B5F, 0x2067FCDE, 0xA8B09C1A, 0x93D194CD,
+            0xBE49846E, 0xB75D5B9A, 0xD59AECB8, 0x5BF3C917, 0xFEE94248, 0xDE8EBE96, 0xB5A9328A,
+            0x2678A647, 0x98312229, 0x2F6C79B3, 0x812C81AD, 0xDADF48BA, 0x24360AF2, 0xFAB8B464,
+            0x98C5BFC9, 0xBEBD198E, 0x268C3BA7, 0x09E04214, 0x68007BAC, 0xB2DF3316, 0x96E939E4,
+            0x6C518D80, 0xC814E204, 0x76A9FB8A, 0x5025C02D, 0x59C58239, 0xDE136967, 0x6CCC5A71,
+            0xFA256395, 0x9674EE15, 0x5886CA5D, 0x2E2F31D7, 0x7E0AF1FA, 0x27CF73C3, 0x749C47AB,
+            0x18501DDA, 0xE2757E4F, 0x7401905A, 0xCAFAAAE3, 0xE4D59B34, 0x9ADF6ACE, 0xBD10190D,
+            0xFE4890D1, 0xE6188D0B, 0x046DF344, 0x706C631E,
+        ];
+        assert_eq!(key_expansion_256(key), result)
     }
 }
