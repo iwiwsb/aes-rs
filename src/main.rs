@@ -146,9 +146,37 @@ fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
     key_expansion::<8, 60>(key)
 }
 
+#[derive(Debug, PartialEq)]
+struct AESState {
+    raw: [u8; 16],
+}
+
+impl AESState {
+    fn add_round_key(&mut self) {
+        todo!()
+    }
+
+    fn sub_bytes(&mut self) {
+        self.raw = self.raw.map(sub_byte);
+    }
+
+    fn shift_rows(&mut self) {
+        todo!()
+    }
+
+    fn mix_columns(&mut self) {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_sub_byte() {
+        assert_eq!(sub_byte(0x19), 0xD4);
+    }
 
     #[test]
     fn test_x_times() {
@@ -206,5 +234,23 @@ mod tests {
             0xFE4890D1, 0xE6188D0B, 0x046DF344, 0x706C631E,
         ];
         assert_eq!(key_expansion_256(key), result)
+    }
+
+    #[test]
+    fn test_aes_state_sub_bytes() {
+        let mut state = AESState {
+            raw: [
+                0x19, 0xA0, 0x9A, 0xE9, 0x3D, 0xF4, 0xC6, 0xF8, 0xE3, 0xE2, 0x8D, 0x48, 0xBE, 0x2B,
+                0x2A, 0x08,
+            ],
+        };
+
+        let result: [u8; 16] = [
+            0xD4, 0xE0, 0xB8, 0x1E, 0x27, 0xBF, 0xB4, 0x41, 0x11, 0x98, 0x5D, 0x52, 0xAE, 0xF1,
+            0xE5, 0x30,
+        ];
+        state.sub_bytes();
+
+        assert_eq!(state.raw, result);
     }
 }
