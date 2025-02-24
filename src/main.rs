@@ -91,14 +91,6 @@ fn inv_sub_byte(byte: u8) -> u8 {
     INV_S_BOX[byte as usize]
 }
 
-fn shift_row(row: u32, n: u32) -> u32 {
-    row.rotate_left(n * 8)
-}
-
-fn inv_shift_row(row: u32, n: u32) -> u32 {
-    row.rotate_right(n * 8)
-}
-
 fn sub_word(word: u32) -> u32 {
     let bytes: [u8; 4] = word.to_be_bytes();
     u32::from_be_bytes([
@@ -146,12 +138,29 @@ fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
     key_expansion::<8, 60>(key)
 }
 
-#[derive(Debug, PartialEq)]
 struct AESState {
     raw: [u8; 16],
 }
 
 impl AESState {
+    fn columns(&self) -> [u32; 4] {
+        [
+            u32::from_be_bytes([self.raw[0], self.raw[4], self.raw[8], self.raw[12]]),
+            u32::from_be_bytes([self.raw[1], self.raw[5], self.raw[9], self.raw[13]]),
+            u32::from_be_bytes([self.raw[2], self.raw[6], self.raw[10], self.raw[14]]),
+            u32::from_be_bytes([self.raw[3], self.raw[7], self.raw[11], self.raw[15]]),
+        ]
+    }
+
+    fn rows(&self) -> [u32; 4] {
+        [
+            u32::from_be_bytes([self.raw[0], self.raw[1], self.raw[2], self.raw[3]]),
+            u32::from_be_bytes([self.raw[4], self.raw[5], self.raw[6], self.raw[7]]),
+            u32::from_be_bytes([self.raw[8], self.raw[9], self.raw[10], self.raw[11]]),
+            u32::from_be_bytes([self.raw[12], self.raw[13], self.raw[14], self.raw[15]]),
+        ]
+    }
+
     fn add_round_key(&mut self) {
         todo!()
     }
@@ -161,22 +170,13 @@ impl AESState {
     }
 
     fn shift_rows(&mut self) {
-        let mut rows = [
-            u32::from_be_bytes([self.raw[0], self.raw[1], self.raw[2], self.raw[3]]),
-            u32::from_be_bytes([self.raw[4], self.raw[5], self.raw[6], self.raw[7]]),
-            u32::from_be_bytes([self.raw[8], self.raw[9], self.raw[10], self.raw[11]]),
-            u32::from_be_bytes([self.raw[12], self.raw[13], self.raw[14], self.raw[15]]),
-        ];
-
-        rows[1] = rows[1].rotate_left(8);
-        rows[2] = rows[2].rotate_left(16);
-        rows[3] = rows[3].rotate_left(24);
+        let rows = self.rows();
 
         let new_rows = [
             rows[0].to_be_bytes(),
-            rows[1].to_be_bytes(),
-            rows[2].to_be_bytes(),
-            rows[3].to_be_bytes(),
+            rows[1].rotate_left(8).to_be_bytes(),
+            rows[2].rotate_left(16).to_be_bytes(),
+            rows[3].rotate_left(24).to_be_bytes(),
         ]
         .concat();
 
@@ -184,7 +184,24 @@ impl AESState {
     }
 
     fn mix_columns(&mut self) {
-        todo!()
+        let columns = self.columns();
+        let mixed_columns = [
+            mix_column(columns[0]),
+            mix_column(columns[1]),
+            mix_column(columns[2]),
+            mix_column(columns[3]),
+        ];
+        let c1: [u8; 4] = mixed_columns[0].to_be_bytes();
+        let c2: [u8; 4] = mixed_columns[1].to_be_bytes();
+        let c3: [u8; 4] = mixed_columns[2].to_be_bytes();
+        let c4: [u8; 4] = mixed_columns[3].to_be_bytes();
+
+        let r1 = [c1[0], c2[0], c3[0], c4[0]];
+        let r2 = [c1[1], c2[1], c3[1], c4[1]];
+        let r3 = [c1[2], c2[2], c3[2], c4[2]];
+        let r4 = [c1[3], c2[3], c3[3], c4[3]];
+
+        self.raw.copy_from_slice(&[r1, r2, r3, r4].concat());
     }
 }
 
@@ -288,6 +305,25 @@ mod tests {
         ];
 
         state.shift_rows();
+
+        assert_eq!(state.raw, result);
+    }
+
+    #[test]
+    fn test_aes_state_mix_columns() {
+        let mut state = AESState {
+            raw: [
+                0xD4, 0xE0, 0xB8, 0x1E, 0xBF, 0xB4, 0x41, 0x27, 0x5D, 0x52, 0x11, 0x98, 0x30, 0xAE,
+                0xF1, 0xE5,
+            ],
+        };
+
+        let result: [u8; 16] = [
+            0x04, 0xE0, 0x48, 0x28, 0x66, 0xCB, 0xF8, 0x06, 0x81, 0x19, 0xD3, 0x26, 0xE5, 0x9A,
+            0x7A, 0x4C,
+        ];
+
+        state.mix_columns();
 
         assert_eq!(state.raw, result);
     }
