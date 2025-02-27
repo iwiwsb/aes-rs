@@ -45,36 +45,6 @@ const ROUND_CONSTANTS: [u32; 10] = [
     0x1B000000, 0x36000000,
 ];
 
-/*fn euclid_alg_ex(a: i32, b: i32) -> (i32, i32, i32) {
-    let mut x2 = 1;
-    let mut x1 = 0;
-    let mut y2 = 0;
-    let mut y1 = 1;
-    let mut x: i32;
-    let mut y: i32;
-
-    let mut a_= a;
-    let mut b_= b;
-
-    let mut q: i32;
-    let mut r: i32;
-
-    while b_ != 0 {
-        q = a_ / b_;
-        r = a_ - q * b_;
-        x = x2 - q * x1;
-        y = y2 - q * y1;
-
-        a_ = b_;
-        b_ = r;
-        x2 = x1;
-        x1 = x;
-        y2 = y1;
-        y1 = y;
-    }
-    (a_, x2, y2)
-}*/
-
 fn x_times(b: u8) -> u8 {
     if b & 0b10000000 == 0 {
         b << 1
