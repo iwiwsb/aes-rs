@@ -138,8 +138,13 @@ fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
     key_expansion::<8, 60>(key)
 }
 
-fn aes_128(input: [u8; 16], key: [u32; 4]) -> AESState {
-    let mut state = AESState { raw: input };
+fn aes_128_encrypt(input: [u8; 16], key: [u32; 4]) -> AESState {
+    let mut state = AESState {
+        raw: [
+            input[0], input[4], input[8], input[12], input[1], input[5], input[9], input[13],
+            input[2], input[6], input[10], input[14], input[3], input[7], input[11], input[15],
+        ],
+    };
     let expanded_key = key_expansion_128(key);
     let mut round_key = [0u32; 4];
     round_key.copy_from_slice(&expanded_key[0..4]);
@@ -158,11 +163,11 @@ fn aes_128(input: [u8; 16], key: [u32; 4]) -> AESState {
     state
 }
 
-fn aes_192(input: [u8; 16], key: [u32; 6]) -> [u8; 16] {
+fn aes_192_encrypt(input: [u8; 16], key: [u32; 6]) -> [u8; 16] {
     todo!()
 }
 
-fn aes_256(input: [u8; 16], key: [u32; 8]) -> [u8; 16] {
+fn aes_256_encrypt(input: [u8; 16], key: [u32; 8]) -> [u8; 16] {
     todo!()
 }
 
@@ -394,8 +399,8 @@ mod tests {
     #[test]
     fn test_aes_128() {
         let input: [u8; 16] = [
-            0x32, 0x88, 0x31, 0xE0, 0x43, 0x5A, 0x31, 0x37, 0xF6, 0x30, 0x98, 0x07, 0xA8, 0x8D,
-            0xA2, 0x34,
+            0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
+            0x07, 0x34,
         ];
 
         let key: [u32; 4] = [
@@ -412,6 +417,6 @@ mod tests {
             ],
         };
 
-        assert_eq!(aes_128(input, key), result);
+        assert_eq!(aes_128_encrypt(input, key), result);
     }
 }
