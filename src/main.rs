@@ -143,9 +143,7 @@ fn aes_128(input: [u8; 16], key: [u32; 4]) -> AESState {
     let expanded_key = key_expansion_128(key);
     let mut round_key = [0u32; 4];
     round_key.copy_from_slice(&expanded_key[0..4]);
-    println!("{:X?}", round_key);
     state.add_round_key(&round_key);
-    println!("{:X?}", state);
     for r in 1..10 {
         round_key.copy_from_slice(&expanded_key[4 * r..4 * r + 4]);
         state.sub_bytes();
