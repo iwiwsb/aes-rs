@@ -138,6 +138,37 @@ fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
     key_expansion::<8, 60>(key)
 }
 
+fn aes_128(input: [u8; 16], key: [u32; 4]) -> AESState {
+    let mut state = AESState { raw: input };
+    let expanded_key = key_expansion_128(key);
+    let mut round_key = [0u32; 4];
+    round_key.copy_from_slice(&expanded_key[0..4]);
+    println!("{:X?}", round_key);
+    state.add_round_key(&round_key);
+    println!("{:X?}", state);
+    for r in 1..10 {
+        round_key.copy_from_slice(&expanded_key[4 * r..4 * r + 4]);
+        state.sub_bytes();
+        state.shift_rows();
+        state.mix_columns();
+        state.add_round_key(&round_key)
+    }
+    round_key.copy_from_slice(&expanded_key[4 * 10..4 * 10 + 4]);
+    state.sub_bytes();
+    state.shift_rows();
+    state.add_round_key(&round_key);
+    state
+}
+
+fn aes_192(input: [u8; 16], key: [u32; 6]) -> [u8; 16] {
+    todo!()
+}
+
+fn aes_256(input: [u8; 16], key: [u32; 8]) -> [u8; 16] {
+    todo!()
+}
+
+#[derive(Debug, PartialEq)]
 struct AESState {
     raw: [u8; 16],
 }
@@ -360,5 +391,29 @@ mod tests {
 
         state.add_round_key(&round_key);
         assert_eq!(state.raw, result);
+    }
+
+    #[test]
+    fn test_aes_128() {
+        let input: [u8; 16] = [
+            0x32, 0x88, 0x31, 0xE0, 0x43, 0x5A, 0x31, 0x37, 0xF6, 0x30, 0x98, 0x07, 0xA8, 0x8D,
+            0xA2, 0x34,
+        ];
+
+        let key: [u32; 4] = [
+            u32::from_be_bytes([0x2B, 0x7E, 0x15, 0x16]),
+            u32::from_be_bytes([0x28, 0xAE, 0xD2, 0xA6]),
+            u32::from_be_bytes([0xAB, 0xF7, 0x15, 0x88]),
+            u32::from_be_bytes([0x09, 0xCF, 0x4F, 0x3C]),
+        ];
+
+        let result = AESState {
+            raw: [
+                0x39, 0x02, 0xDC, 0x19, 0x25, 0xDC, 0x11, 0x6A, 0x84, 0x09, 0x85, 0x0B, 0x1D, 0xFB,
+                0x97, 0x32,
+            ],
+        };
+
+        assert_eq!(aes_128(input, key), result);
     }
 }
