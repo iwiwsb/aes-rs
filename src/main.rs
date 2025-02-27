@@ -161,8 +161,31 @@ impl AESState {
         ]
     }
 
-    fn add_round_key(&mut self) {
-        todo!()
+    fn from_columns(columns: [u32; 4]) -> [u8; 16] {
+        let c1: [u8; 4] = columns[0].to_be_bytes();
+        let c2: [u8; 4] = columns[1].to_be_bytes();
+        let c3: [u8; 4] = columns[2].to_be_bytes();
+        let c4: [u8; 4] = columns[3].to_be_bytes();
+
+        let r1 = [c1[0], c2[0], c3[0], c4[0]];
+        let r2 = [c1[1], c2[1], c3[1], c4[1]];
+        let r3 = [c1[2], c2[2], c3[2], c4[2]];
+        let r4 = [c1[3], c2[3], c3[3], c4[3]];
+
+        [
+            r1[0], r1[1], r1[2], r1[3], r2[0], r2[1], r2[2], r2[3], r3[0], r3[1], r3[2], r3[3],
+            r4[0], r4[1], r4[2], r4[3],
+        ]
+    }
+
+    fn add_round_key(&mut self, key: &[u32; 4]) {
+        let mut columns = self.columns();
+        columns[0] ^= key[0];
+        columns[1] ^= key[1];
+        columns[2] ^= key[2];
+        columns[3] ^= key[3];
+
+        self.raw = Self::from_columns(columns);
     }
 
     fn sub_bytes(&mut self) {
@@ -191,17 +214,8 @@ impl AESState {
             mix_column(columns[2]),
             mix_column(columns[3]),
         ];
-        let c1: [u8; 4] = mixed_columns[0].to_be_bytes();
-        let c2: [u8; 4] = mixed_columns[1].to_be_bytes();
-        let c3: [u8; 4] = mixed_columns[2].to_be_bytes();
-        let c4: [u8; 4] = mixed_columns[3].to_be_bytes();
 
-        let r1 = [c1[0], c2[0], c3[0], c4[0]];
-        let r2 = [c1[1], c2[1], c3[1], c4[1]];
-        let r3 = [c1[2], c2[2], c3[2], c4[2]];
-        let r4 = [c1[3], c2[3], c3[3], c4[3]];
-
-        self.raw.copy_from_slice(&[r1, r2, r3, r4].concat());
+        self.raw = Self::from_columns(mixed_columns);
     }
 }
 
@@ -325,6 +339,26 @@ mod tests {
 
         state.mix_columns();
 
+        assert_eq!(state.raw, result);
+    }
+
+    #[test]
+    fn test_aes_state_add_round_key() {
+        let mut state = AESState {
+            raw: [
+                0x32, 0x88, 0x31, 0xE0, 0x43, 0x5A, 0x31, 0x37, 0xF6, 0x30, 0x98, 0x07, 0xA8, 0x8D,
+                0xA2, 0x34,
+            ],
+        };
+
+        let round_key: [u32; 4] = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
+
+        let result: [u8; 16] = [
+            0x19, 0xA0, 0x9A, 0xE9, 0x3D, 0xF4, 0xC6, 0xF8, 0xE3, 0xE2, 0x8D, 0x48, 0xBE, 0x2B,
+            0x2A, 0x08,
+        ];
+
+        state.add_round_key(&round_key);
         assert_eq!(state.raw, result);
     }
 }
