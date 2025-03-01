@@ -80,65 +80,62 @@ fn mix_column(column: u32) -> u32 {
     u32::from_be_bytes([s0, s1, s2, s3])
 }
 
-fn key_expansion<const NK: usize, const S: usize>(key: [u32; NK]) -> [u32; S] {
-    let mut w: [u32; S] = [0; S];
-    w[..NK].copy_from_slice(&key[..NK]);
+fn key_expansion<const KEY_LEN: usize, const EX_KEY_LEN: usize>(
+    key: [u32; KEY_LEN],
+) -> [u32; EX_KEY_LEN] {
+    let mut w: [u32; EX_KEY_LEN] = [0; EX_KEY_LEN];
+    w[..KEY_LEN].copy_from_slice(&key[..KEY_LEN]);
     let mut temp;
-    for i in NK..S {
+    for i in KEY_LEN..EX_KEY_LEN {
         temp = w[i - 1];
-        if i % NK == 0 {
-            temp = sub_word(temp.rotate_left(8)) ^ ROUND_CONSTANTS[(i - 1) / NK];
-        } else if NK > 6 && i % NK == 4 {
+        if i % KEY_LEN == 0 {
+            temp = sub_word(temp.rotate_left(8)) ^ ROUND_CONSTANTS[(i - 1) / KEY_LEN];
+        } else if KEY_LEN > 6 && i % KEY_LEN == 4 {
             temp = sub_word(temp);
         }
-        w[i] = w[i - NK] ^ temp;
+        w[i] = w[i - KEY_LEN] ^ temp;
     }
     w
 }
 
-fn key_expansion_128(key: [u32; 4]) -> [u32; 44] {
-    key_expansion::<4, 44>(key)
-}
-
-fn key_expansion_192(key: [u32; 6]) -> [u32; 52] {
-    key_expansion::<6, 52>(key)
-}
-
-fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
-    key_expansion::<8, 60>(key)
-}
-
-fn aes_128_encrypt(input: [u8; 16], key: [u32; 4]) -> AESState {
+fn aes_encrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
+    input: [u8; 16],
+    key: [u32; KEY_LEN],
+) -> AESState {
     let mut state = AESState {
         raw: [
             input[0], input[4], input[8], input[12], input[1], input[5], input[9], input[13],
             input[2], input[6], input[10], input[14], input[3], input[7], input[11], input[15],
         ],
     };
-    let expanded_key = key_expansion_128(key);
+    let expanded_key: [u32; EX_KEY_LEN] = key_expansion(key);
     let mut round_key = [0u32; 4];
     round_key.copy_from_slice(&expanded_key[0..4]);
     state.add_round_key(&round_key);
-    for r in 1..10 {
+    for r in 1..ROUNDS {
         round_key.copy_from_slice(&expanded_key[4 * r..4 * r + 4]);
         state.sub_bytes();
         state.shift_rows();
         state.mix_columns();
         state.add_round_key(&round_key)
     }
-    round_key.copy_from_slice(&expanded_key[4 * 10..4 * 10 + 4]);
+    round_key.copy_from_slice(&expanded_key[4 * ROUNDS..4 * ROUNDS + 4]);
     state.sub_bytes();
     state.shift_rows();
     state.add_round_key(&round_key);
     state
 }
 
-fn aes_192_encrypt(input: [u8; 16], key: [u32; 6]) -> [u8; 16] {
-    todo!()
+fn aes_128_encrypt(input: [u8; 16], key: [u32; 4]) -> AESState {
+    aes_encrypt::<4, 44, 10>(input, key)
 }
 
-fn aes_256_encrypt(input: [u8; 16], key: [u32; 8]) -> [u8; 16] {
-    todo!()
+fn aes_192_encrypt(input: [u8; 16], key: [u32; 6]) -> AESState {
+    aes_encrypt::<6, 52, 12>(input, key)
+}
+
+fn aes_256_encrypt(input: [u8; 16], key: [u32; 8]) -> AESState {
+    aes_encrypt::<8, 60, 14>(input, key)
 }
 
 #[derive(Debug, PartialEq)]
@@ -249,7 +246,7 @@ mod tests {
             0x7F8D292F, 0xAC7766F3, 0x19FADC21, 0x28D12941, 0x575C006E, 0xD014F9A8, 0xC9EE2589,
             0xE13F0CC8, 0xB6630CA6,
         ];
-        assert_eq!(key_expansion_128(key), result)
+        assert_eq!(key_expansion(key), result)
     }
 
     #[test]
@@ -267,7 +264,7 @@ mod tests {
             0x821F750A, 0xAD07D753, 0xCA400538, 0x8FCC5006, 0x282D166A, 0xBC3CE7B5, 0xE98BA06F,
             0x448C773C, 0x8ECC7204, 0x01002202,
         ];
-        assert_eq!(key_expansion_192(key), result)
+        assert_eq!(key_expansion(key), result)
     }
 
     #[test]
@@ -287,7 +284,7 @@ mod tests {
             0x18501DDA, 0xE2757E4F, 0x7401905A, 0xCAFAAAE3, 0xE4D59B34, 0x9ADF6ACE, 0xBD10190D,
             0xFE4890D1, 0xE6188D0B, 0x046DF344, 0x706C631E,
         ];
-        assert_eq!(key_expansion_256(key), result)
+        assert_eq!(key_expansion(key), result)
     }
 
     #[test]
@@ -367,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn test_aes_128() {
+    fn test_aes_128_encrypt() {
         let input: [u8; 16] = [
             0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
             0x07, 0x34,
