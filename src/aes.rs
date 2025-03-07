@@ -76,6 +76,10 @@ fn mix_column(column: u32) -> u32 {
     u32::from_be_bytes([s0, s1, s2, s3])
 }
 
+fn inv_mix_column(column: u32) -> u32 {
+    todo!()
+}
+
 fn key_expansion<const KEY_LEN: usize, const EX_KEY_LEN: usize>(
     key: [u32; KEY_LEN],
 ) -> [u32; EX_KEY_LEN] {
@@ -163,6 +167,10 @@ impl Aes {
         self.state = self.state.map(sub_byte);
     }
 
+    fn inv_sub_bytes(&mut self) {
+        self.state = self.state.map(inv_sub_byte);
+    }
+
     fn shift_rows(&mut self) {
         let rows = self.rows();
 
@@ -171,6 +179,20 @@ impl Aes {
             rows[1].rotate_left(8).to_be_bytes(),
             rows[2].rotate_left(16).to_be_bytes(),
             rows[3].rotate_left(24).to_be_bytes(),
+        ]
+        .concat();
+
+        self.state.copy_from_slice(&new_rows);
+    }
+
+    fn inv_shift_rows(&mut self) {
+        let rows = self.rows();
+
+        let new_rows = [
+            rows[0].to_be_bytes(),
+            rows[1].rotate_right(8).to_be_bytes(),
+            rows[2].rotate_right(16).to_be_bytes(),
+            rows[3].rotate_right(24).to_be_bytes(),
         ]
         .concat();
 
@@ -187,6 +209,18 @@ impl Aes {
         ];
 
         self.state = Self::from_columns(mixed_columns);
+    }
+
+    fn inv_mix_columns(&mut self) {
+        let columns = self.columns();
+        let inv_mixed_columns = [
+            inv_mix_column(columns[0]),
+            inv_mix_column(columns[1]),
+            inv_mix_column(columns[2]),
+            inv_mix_column(columns[3]),
+        ];
+
+        self.state = Self::from_columns(inv_mixed_columns);
     }
 
     fn encrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
@@ -220,6 +254,13 @@ impl Aes {
 
     fn encrypt_256(&mut self, key: [u32; 8]) {
         Self::encrypt::<8, 60, 14>(self, key)
+    }
+
+    fn decrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
+        &mut self,
+        key: [u32; KEY_LEN],
+    ) {
+        todo!()
     }
 }
 
@@ -292,20 +333,34 @@ mod tests {
 
     #[test]
     fn test_aes_state_sub_bytes() {
-        let mut state = Aes {
-            state: [
-                0x19, 0xA0, 0x9A, 0xE9, 0x3D, 0xF4, 0xC6, 0xF8, 0xE3, 0xE2, 0x8D, 0x48, 0xBE, 0x2B,
-                0x2A, 0x08,
-            ],
-        };
+        let mut state = Aes::new([
+            0x19, 0x3D, 0xE3, 0xBE, 0xA0, 0xF4, 0xE2, 0x2B, 0x9A, 0xC6, 0x8D, 0x2A, 0xE9, 0xF8,
+            0x48, 0x08,
+        ]);
 
-        let result: [u8; 16] = [
-            0xD4, 0xE0, 0xB8, 0x1E, 0x27, 0xBF, 0xB4, 0x41, 0x11, 0x98, 0x5D, 0x52, 0xAE, 0xF1,
-            0xE5, 0x30,
-        ];
+        let result = Aes::new([
+            0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1, 0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41,
+            0x52, 0x30,
+        ]);
         state.sub_bytes();
 
-        assert_eq!(state.state, result);
+        assert_eq!(state, result);
+    }
+
+    #[test]
+    fn test_aes_state_inv_sub_bytes() {
+        let mut state = Aes::new([
+            0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1, 0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41,
+            0x52, 0x30,
+        ]);
+
+        let result = Aes::new([
+            0x19, 0x3D, 0xE3, 0xBE, 0xA0, 0xF4, 0xE2, 0x2B, 0x9A, 0xC6, 0x8D, 0x2A, 0xE9, 0xF8,
+            0x48, 0x08,
+        ]);
+        state.inv_sub_bytes();
+
+        assert_eq!(state, result);
     }
 
     #[test]
@@ -334,22 +389,33 @@ mod tests {
 
     #[test]
     fn test_aes_state_shift_rows() {
-        let mut aes = Aes {
-            state: [
-                0xD4, 0xE0, 0xB8, 0x1E, 0x27, 0xBF, 0xB4, 0x41, 0x11, 0x98, 0x5D, 0x52, 0xAE, 0xF1,
-                0xE5, 0x30,
-            ],
-        };
+        let mut aes = Aes::new([
+            0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1, 0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41,
+            0x52, 0x30,
+        ]);
 
-        let result = Aes {
-            state: [
-                0xD4, 0xE0, 0xB8, 0x1E, 0xBF, 0xB4, 0x41, 0x27, 0x5D, 0x52, 0x11, 0x98, 0x30, 0xAE,
-                0xF1, 0xE5,
-            ],
-        };
+        let result = Aes::new([
+            0xD4, 0xBF, 0x5D, 0x30, 0xE0, 0xB4, 0x52, 0xAE, 0xB8, 0x41, 0x11, 0xF1, 0x1E, 0x27,
+            0x98, 0xE5,
+        ]);
 
         aes.shift_rows();
+        assert_eq!(aes, result);
+    }
 
+    #[test]
+    fn test_aes_state_inv_shift_rows() {
+        let mut aes = Aes::new([
+            0xD4, 0xBF, 0x5D, 0x30, 0xE0, 0xB4, 0x52, 0xAE, 0xB8, 0x41, 0x11, 0xF1, 0x1E, 0x27,
+            0x98, 0xE5,
+        ]);
+
+        let result = Aes::new([
+            0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1, 0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41,
+            0x52, 0x30,
+        ]);
+
+        aes.inv_shift_rows();
         assert_eq!(aes, result);
     }
 
