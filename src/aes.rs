@@ -260,22 +260,48 @@ impl Aes {
     }
 
     fn encrypt_128(&mut self, key: [u32; 4]) {
-        Self::encrypt::<4, 44, 10>(self, key)
+        self.encrypt::<4, 44, 10>(key)
     }
 
     fn encrypt_192(&mut self, key: [u32; 6]) {
-        Self::encrypt::<6, 52, 12>(self, key)
+        self.encrypt::<6, 52, 12>(key)
     }
 
     fn encrypt_256(&mut self, key: [u32; 8]) {
-        Self::encrypt::<8, 60, 14>(self, key)
+        self.encrypt::<8, 60, 14>(key)
     }
 
     fn decrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
         &mut self,
         key: [u32; KEY_LEN],
     ) {
-        todo!()
+        let expanded_key: [u32; EX_KEY_LEN] = key_expansion(key);
+        let mut round_key = [0u32; 4];
+        round_key.copy_from_slice(&expanded_key[4 * ROUNDS..4 * ROUNDS + 4]);
+        self.add_round_key(&round_key);
+        for r in (1..ROUNDS).rev() {
+            round_key.copy_from_slice(&expanded_key[4 * r..4 * r + 4]);
+            self.inv_shift_rows();
+            self.inv_sub_bytes();
+            self.add_round_key(&round_key);
+            self.inv_mix_columns()
+        }
+        round_key.copy_from_slice(&expanded_key[0..4]);
+        self.inv_shift_rows();
+        self.inv_sub_bytes();
+        self.add_round_key(&round_key);
+    }
+
+    fn decrypt_128(&mut self, key: [u32; 4]) {
+        self.decrypt::<4, 44, 10>(key)
+    }
+
+    fn decrypt_192(&mut self, key: [u32; 6]) {
+        self.decrypt::<6, 52, 12>(key)
+    }
+
+    fn decrypt_256(&mut self, key: [u32; 8]) {
+        self.decrypt::<8, 60, 14>(key)
     }
 }
 
@@ -497,6 +523,23 @@ mod tests {
             0x0B, 0x32,
         ]);
         aes.encrypt_128(key);
+        assert_eq!(aes, result);
+    }
+
+    #[test]
+    fn test_aes_128_decrypt() {
+        let mut aes = Aes::new([
+            0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB, 0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A,
+            0x0B, 0x32,
+        ]);
+
+        let key: [u32; 4] = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
+
+        let result = Aes::new([
+            0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
+            0x07, 0x34,
+        ]);
+        aes.decrypt_128(key);
         assert_eq!(aes, result);
     }
 }
