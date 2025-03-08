@@ -42,10 +42,10 @@ const ROUND_CONSTANTS: [u32; 10] = [
 ];
 
 fn x_times(b: u8) -> u8 {
-    if b & 0b10000000 == 0 {
+    if b & 0b1000_0000 == 0 {
         b << 1
     } else {
-        (b << 1) ^ 0b00011011
+        (b << 1) ^ 0b0001_1011
     }
 }
 
@@ -77,7 +77,24 @@ fn mix_column(column: u32) -> u32 {
 }
 
 fn inv_mix_column(column: u32) -> u32 {
-    todo!()
+    let bytes: [u8; 4] = column.to_be_bytes();
+    let s0 = (x_times(bytes[0]) ^ x_times(x_times(bytes[0])) ^ x_times(x_times(x_times(bytes[0]))))
+        ^ (bytes[1] ^ x_times(bytes[1]) ^ x_times(x_times(x_times(bytes[1]))))
+        ^ (bytes[2] ^ x_times(x_times(bytes[2])) ^ x_times(x_times(x_times(bytes[2]))))
+        ^ (bytes[3] ^ x_times(x_times(x_times(bytes[3]))));
+    let s1 = (bytes[0] ^ x_times(x_times(x_times(bytes[0]))))
+        ^ (x_times(bytes[1]) ^ x_times(x_times(bytes[1])) ^ x_times(x_times(x_times(bytes[1]))))
+        ^ (bytes[2] ^ x_times(bytes[2]) ^ x_times(x_times(x_times(bytes[2]))))
+        ^ (bytes[3] ^ x_times(x_times(bytes[3])) ^ x_times(x_times(x_times(bytes[3]))));
+    let s2 = (bytes[0] ^ x_times(x_times(bytes[0])) ^ x_times(x_times(x_times(bytes[0]))))
+        ^ (bytes[1] ^ x_times(x_times(x_times(bytes[1]))))
+        ^ (x_times(bytes[2]) ^ x_times(x_times(bytes[2])) ^ x_times(x_times(x_times(bytes[2]))))
+        ^ (bytes[3] ^ x_times(bytes[3]) ^ x_times(x_times(x_times(bytes[3]))));
+    let s3 = (bytes[0] ^ x_times(bytes[0]) ^ x_times(x_times(x_times(bytes[0]))))
+        ^ (bytes[1] ^ x_times(x_times(bytes[1])) ^ x_times(x_times(x_times(bytes[1]))))
+        ^ (bytes[2] ^ x_times(x_times(x_times(bytes[2]))))
+        ^ (x_times(bytes[3]) ^ x_times(x_times(bytes[3])) ^ x_times(x_times(x_times(bytes[3]))));
+    u32::from_be_bytes([s0, s1, s2, s3])
 }
 
 fn key_expansion<const KEY_LEN: usize, const EX_KEY_LEN: usize>(
@@ -207,7 +224,6 @@ impl Aes {
             mix_column(columns[2]),
             mix_column(columns[3]),
         ];
-
         self.state = Self::from_columns(mixed_columns);
     }
 
@@ -219,7 +235,6 @@ impl Aes {
             inv_mix_column(columns[2]),
             inv_mix_column(columns[3]),
         ];
-
         self.state = Self::from_columns(inv_mixed_columns);
     }
 
@@ -433,6 +448,20 @@ mod tests {
 
         state.mix_columns();
 
+        assert_eq!(state, result);
+    }
+
+    #[test]
+    fn test_aes_state_inv_mix_columns() {
+        let mut state = Aes::new([
+            0x04, 0x66, 0x81, 0xE5, 0xE0, 0xCB, 0x19, 0x9A, 0x48, 0xF8, 0xD3, 0x7A, 0x28, 0x06,
+            0x26, 0x4C,
+        ]);
+        let result = Aes::new([
+            0xD4, 0xBF, 0x5D, 0x30, 0xE0, 0xB4, 0x52, 0xAE, 0xB8, 0x41, 0x11, 0xF1, 0x1E, 0x27,
+            0x98, 0xE5,
+        ]);
+        state.inv_mix_columns();
         assert_eq!(state, result);
     }
 
