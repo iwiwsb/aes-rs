@@ -4,7 +4,7 @@ mod aes;
 
 fn command_line_interface() -> clap::Command {
     clap::Command::new(env!("CARGO_BIN_NAME"))
-        .about("Small utility to encrypt and decrypt files using AES cipher")
+        .about("An utility to encrypt and decrypt files using AES")
         .version(env!("CARGO_PKG_VERSION"))
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -14,17 +14,20 @@ fn command_line_interface() -> clap::Command {
                 .arg(
                     clap::Arg::new("filepath")
                         .help("path to file to encrypt")
-                        .value_parser(clap::value_parser!(PathBuf)),
+                        .value_parser(clap::value_parser!(PathBuf))
+                        .required(true),
                 )
                 .arg(
                     clap::Arg::new("key")
                         .help("secret key")
-                        .value_parser(clap::value_parser!(String)),
+                        .value_parser(clap::value_parser!(String))
+                        .required(true),
                 )
                 .arg(
                     clap::Arg::new("output")
                         .help("path to encrypted file")
-                        .value_parser(clap::value_parser!(PathBuf)),
+                        .value_parser(clap::value_parser!(PathBuf))
+                        .required(true),
                 )
                 .arg_required_else_help(true),
         )
@@ -34,17 +37,20 @@ fn command_line_interface() -> clap::Command {
                 .arg(
                     clap::Arg::new("filepath")
                         .help("path to file to decrypt")
-                        .value_parser(clap::value_parser!(PathBuf)),
+                        .value_parser(clap::value_parser!(PathBuf))
+                        .required(true),
                 )
                 .arg(
                     clap::Arg::new("key")
                         .help("secret key")
-                        .value_parser(clap::value_parser!(String)),
+                        .value_parser(clap::value_parser!(String))
+                        .required(true),
                 )
                 .arg(
                     clap::Arg::new("output")
                         .help("path to decrypted file")
-                        .value_parser(clap::value_parser!(PathBuf)),
+                        .value_parser(clap::value_parser!(PathBuf))
+                        .required(true),
                 )
                 .arg_required_else_help(true),
         )
