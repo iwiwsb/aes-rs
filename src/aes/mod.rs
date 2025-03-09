@@ -304,23 +304,74 @@ struct Key<const SIZE: usize> {
     raw: [u32; SIZE],
 }
 
-impl<const SIZE: usize> Key<SIZE> {
-    fn new() -> Self {
-        todo!()
+impl From<[u8; 16]> for Key<4> {
+    fn from(value: [u8; 16]) -> Self {
+        let raw = [
+            u32::from_be_bytes([value[0], value[1], value[2], value[3]]),
+            u32::from_be_bytes([value[4], value[5], value[6], value[7]]),
+            u32::from_be_bytes([value[8], value[9], value[10], value[11]]),
+            u32::from_be_bytes([value[12], value[13], value[14], value[15]]),
+        ];
+        Self { raw }
+    }
+}
+
+impl From<[u8; 24]> for Key<6> {
+    fn from(value: [u8; 24]) -> Self {
+        let raw = [
+            u32::from_be_bytes([value[0], value[1], value[2], value[3]]),
+            u32::from_be_bytes([value[4], value[5], value[6], value[7]]),
+            u32::from_be_bytes([value[8], value[9], value[10], value[11]]),
+            u32::from_be_bytes([value[12], value[13], value[14], value[15]]),
+            u32::from_be_bytes([value[16], value[17], value[18], value[19]]),
+            u32::from_be_bytes([value[20], value[21], value[22], value[23]]),
+        ];
+        Self { raw }
+    }
+}
+
+impl From<[u8; 32]> for Key<8> {
+    fn from(value: [u8; 32]) -> Self {
+        let raw = [
+            u32::from_be_bytes([value[0], value[1], value[2], value[3]]),
+            u32::from_be_bytes([value[4], value[5], value[6], value[7]]),
+            u32::from_be_bytes([value[8], value[9], value[10], value[11]]),
+            u32::from_be_bytes([value[12], value[13], value[14], value[15]]),
+            u32::from_be_bytes([value[16], value[17], value[18], value[19]]),
+            u32::from_be_bytes([value[20], value[21], value[22], value[23]]),
+            u32::from_be_bytes([value[24], value[25], value[26], value[27]]),
+            u32::from_be_bytes([value[28], value[29], value[30], value[31]]),
+        ];
+        Self { raw }
     }
 }
 
 impl Key<4> {
-
+    fn expand(&self) -> [u32; 44] {
+        todo!()
+    }
 }
 
 impl Key<6> {
-    
+    fn expand(&self) -> [u32; 52] {
+        todo!()
+    }
 }
 
 impl Key<8> {
-    
+    fn expand(&self) -> [u32; 60] {
+        todo!()
+    }
 }
+
+struct Aes<const KEY_SIZE: usize> {
+    state: State,
+    key: Key<KEY_SIZE>,
+}
+
+type Aes128 = Aes<4>;
+type Aes192 = Aes<6>;
+type Aes256 = Aes<8>;
 
 #[cfg(test)]
 mod tests {
@@ -366,11 +417,11 @@ mod tests {
 
     #[test]
     fn test_columns() {
-        let aes = State::new([
+        let state = State::new([
             0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
             0x07, 0x34,
         ]);
-        let columns = aes.columns();
+        let columns = state.columns();
         let result = [0x3243F6A8, 0x885A308D, 0x313198A2, 0xE0370734];
 
         assert_eq!(columns, result);
@@ -378,7 +429,7 @@ mod tests {
 
     #[test]
     fn test_shift_rows() {
-        let mut aes = State::new([
+        let mut state = State::new([
             0xD4, 0x27, 0x11, 0xAE, 0xE0, 0xBF, 0x98, 0xF1, 0xB8, 0xB4, 0x5D, 0xE5, 0x1E, 0x41,
             0x52, 0x30,
         ]);
@@ -388,13 +439,13 @@ mod tests {
             0x98, 0xE5,
         ]);
 
-        aes.shift_rows();
-        assert_eq!(aes, result);
+        state.shift_rows();
+        assert_eq!(state, result);
     }
 
     #[test]
     fn test_inv_shift_rows() {
-        let mut aes = State::new([
+        let mut state = State::new([
             0xD4, 0xBF, 0x5D, 0x30, 0xE0, 0xB4, 0x52, 0xAE, 0xB8, 0x41, 0x11, 0xF1, 0x1E, 0x27,
             0x98, 0xE5,
         ]);
@@ -404,8 +455,8 @@ mod tests {
             0x52, 0x30,
         ]);
 
-        aes.inv_shift_rows();
-        assert_eq!(aes, result);
+        state.inv_shift_rows();
+        assert_eq!(state, result);
     }
 
     #[test]
@@ -441,7 +492,7 @@ mod tests {
 
     #[test]
     fn test_add_round_key() {
-        let mut aes = State::new([
+        let mut state = State::new([
             0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
             0x07, 0x34,
         ]);
@@ -453,13 +504,13 @@ mod tests {
             0x48, 0x08,
         ]);
 
-        aes.add_round_key(&round_key);
-        assert_eq!(aes, result);
+        state.add_round_key(&round_key);
+        assert_eq!(state, result);
     }
 
     #[test]
     fn test_aes_128_encrypt() {
-        let mut aes = State::new([
+        let mut state = State::new([
             0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
             0x07, 0x34,
         ]);
@@ -470,8 +521,8 @@ mod tests {
             0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB, 0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A,
             0x0B, 0x32,
         ]);
-        aes.encrypt_128(key);
-        assert_eq!(aes, result);
+        state.encrypt_128(key);
+        assert_eq!(state, result);
     }
 
     #[test]
