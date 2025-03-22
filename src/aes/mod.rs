@@ -116,18 +116,39 @@ fn key_expansion<const KEY_LEN: usize, const EX_KEY_LEN: usize>(
 }
 
 #[derive(Debug, PartialEq)]
-struct State {
+pub struct State {
     raw: [u8; 16],
 }
 
 impl State {
-    fn new(input: [u8; 16]) -> State {
+    pub fn new(input: [u8; 16]) -> State {
         Self {
             raw: [
                 input[0], input[4], input[8], input[12], input[1], input[5], input[9], input[13],
                 input[2], input[6], input[10], input[14], input[3], input[7], input[11], input[15],
             ],
         }
+    }
+
+    pub fn as_vec(&self) -> Vec<u8> {
+        vec![
+            self.raw[0],
+            self.raw[1],
+            self.raw[2],
+            self.raw[3],
+            self.raw[4],
+            self.raw[5],
+            self.raw[6],
+            self.raw[7],
+            self.raw[8],
+            self.raw[9],
+            self.raw[10],
+            self.raw[11],
+            self.raw[12],
+            self.raw[13],
+            self.raw[14],
+            self.raw[15],
+        ]
     }
 
     fn columns(&self) -> [u32; 4] {
@@ -235,9 +256,9 @@ impl State {
 
     fn encrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
         &mut self,
-        key: [u32; KEY_LEN],
+        key: Key<KEY_LEN>,
     ) {
-        let expanded_key: [u32; EX_KEY_LEN] = key_expansion(key);
+        let expanded_key: [u32; EX_KEY_LEN] = key.expand();
         let mut round_key = [0u32; 4];
         round_key.copy_from_slice(&expanded_key[0..4]);
         self.add_round_key(&round_key);
@@ -254,23 +275,23 @@ impl State {
         self.add_round_key(&round_key);
     }
 
-    fn encrypt_128(&mut self, key: [u32; 4]) {
+    pub fn encrypt_128(&mut self, key: Key<4>) {
         self.encrypt::<4, 44, 10>(key)
     }
 
-    fn encrypt_192(&mut self, key: [u32; 6]) {
+    pub fn encrypt_192(&mut self, key: Key<6>) {
         self.encrypt::<6, 52, 12>(key)
     }
 
-    fn encrypt_256(&mut self, key: [u32; 8]) {
+    pub fn encrypt_256(&mut self, key: Key<8>) {
         self.encrypt::<8, 60, 14>(key)
     }
 
     fn decrypt<const KEY_LEN: usize, const EX_KEY_LEN: usize, const ROUNDS: usize>(
         &mut self,
-        key: [u32; KEY_LEN],
+        key: Key<KEY_LEN>,
     ) {
-        let expanded_key: [u32; EX_KEY_LEN] = key_expansion(key);
+        let expanded_key: [u32; EX_KEY_LEN] = key.expand();
         let mut round_key = [0u32; 4];
         round_key.copy_from_slice(&expanded_key[4 * ROUNDS..4 * ROUNDS + 4]);
         self.add_round_key(&round_key);
@@ -287,20 +308,20 @@ impl State {
         self.add_round_key(&round_key);
     }
 
-    fn decrypt_128(&mut self, key: [u32; 4]) {
+    pub fn decrypt_128(&mut self, key: Key<4>) {
         self.decrypt::<4, 44, 10>(key)
     }
 
-    fn decrypt_192(&mut self, key: [u32; 6]) {
+    pub fn decrypt_192(&mut self, key: Key<6>) {
         self.decrypt::<6, 52, 12>(key)
     }
 
-    fn decrypt_256(&mut self, key: [u32; 8]) {
+    pub fn decrypt_256(&mut self, key: Key<8>) {
         self.decrypt::<8, 60, 14>(key)
     }
 }
 
-struct Key<const SIZE: usize> {
+pub struct Key<const SIZE: usize> {
     raw: [u32; SIZE],
 }
 
@@ -346,32 +367,11 @@ impl From<[u8; 32]> for Key<8> {
     }
 }
 
-impl Key<4> {
-    fn expand(&self) -> [u32; 44] {
-        todo!()
+impl<const KEY_LEN: usize> Key<KEY_LEN> {
+    fn expand<const EX_KEY_LEN: usize>(&self) -> [u32; EX_KEY_LEN] {
+        key_expansion(self.raw)
     }
 }
-
-impl Key<6> {
-    fn expand(&self) -> [u32; 52] {
-        todo!()
-    }
-}
-
-impl Key<8> {
-    fn expand(&self) -> [u32; 60] {
-        todo!()
-    }
-}
-
-struct Aes<const KEY_SIZE: usize> {
-    state: State,
-    key: Key<KEY_SIZE>,
-}
-
-type Aes128 = Aes<4>;
-type Aes192 = Aes<6>;
-type Aes256 = Aes<8>;
 
 #[cfg(test)]
 mod tests {
@@ -515,7 +515,10 @@ mod tests {
             0x07, 0x34,
         ]);
 
-        let key: [u32; 4] = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
+        let key = Key::from([
+            0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF,
+            0x4F, 0x3C,
+        ]);
 
         let result = State::new([
             0x39, 0x25, 0x84, 0x1D, 0x02, 0xDC, 0x09, 0xFB, 0xDC, 0x11, 0x85, 0x97, 0x19, 0x6A,
@@ -532,7 +535,10 @@ mod tests {
             0x0B, 0x32,
         ]);
 
-        let key: [u32; 4] = [0x2B7E1516, 0x28AED2A6, 0xABF71588, 0x09CF4F3C];
+        let key = Key::from([
+            0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF,
+            0x4F, 0x3C,
+        ]);
 
         let result = State::new([
             0x32, 0x43, 0xF6, 0xA8, 0x88, 0x5A, 0x30, 0x8D, 0x31, 0x31, 0x98, 0xA2, 0xE0, 0x37,
