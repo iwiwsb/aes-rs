@@ -163,8 +163,8 @@ fn main() {
             let keyfile = sub_matches.get_one::<PathBuf>("keyfile").unwrap();
             let output = sub_matches.get_one::<PathBuf>("output").unwrap();
 
-            let file_to_encrypt = File::open(filepath).unwrap();
-            let mut file_to_decrypt_reader = BufReader::new(file_to_encrypt);
+            let file_to_decrypt = File::open(filepath).unwrap();
+            let mut file_to_decrypt_reader = BufReader::new(file_to_decrypt);
             let mut output_file = File::create(output).unwrap();
 
             let mut buffer = [0u8; 16];
