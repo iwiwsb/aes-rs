@@ -56,14 +56,7 @@ fn main() {
 
                         let mut block = State::new(buffer);
                         block.encrypt_128(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     24 => {
                         let key = Key::from([
@@ -95,14 +88,7 @@ fn main() {
 
                         let mut block = State::new(buffer);
                         block.encrypt_192(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     32 => {
                         let key = Key::from([
@@ -142,14 +128,7 @@ fn main() {
 
                         let mut block = State::new(buffer);
                         block.encrypt_256(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     _ => {
                         panic!("Key length must be 16, 24 or 32 bytes");
@@ -206,13 +185,7 @@ fn main() {
                         let mut block = State::new(buffer);
                         block.decrypt_128(key);
                         let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(out.as_slice());
                     }
                     24 => {
                         let key = Key::from([
@@ -244,14 +217,7 @@ fn main() {
 
                         let mut block = State::new(buffer);
                         block.decrypt_192(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     32 => {
                         let key = Key::from([
@@ -291,14 +257,7 @@ fn main() {
 
                         let mut block = State::new(buffer);
                         block.decrypt_256(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(
-                            [
-                                out[0], out[4], out[8], out[12], out[1], out[5], out[9], out[13],
-                                out[2], out[6], out[10], out[14], out[3], out[7], out[11], out[15],
-                            ]
-                            .as_slice(),
-                        );
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     _ => {
                         panic!("Key length must be 16, 24 or 32 bytes");
