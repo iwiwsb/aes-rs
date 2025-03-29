@@ -21,6 +21,7 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
       with:
+        name: x86_64-unknown-linux-gnu-aes
         path: ./target/release/aes
 
   build_on_windows:
@@ -34,6 +35,7 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4
       with:
+        name: x86_64-pc-windows-msvc-aes.exe
         path: ./target/release/aes.exe
 
   build_on_macos:
@@ -47,4 +49,5 @@ jobs:
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: x86_64-apple-darwin-aes
           path: ./target/release/aes
