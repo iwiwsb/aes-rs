@@ -28,103 +28,34 @@ fn main() {
                     buffer[num_of_bytes_read] = 0x80;
                 }
 
-                let mut key_buf = vec![];
+                let mut key_vec = vec![];
                 let key = File::open(keyfile).unwrap();
                 let mut key_file_reader = BufReader::new(key);
-                key_file_reader.read_to_end(&mut key_buf).unwrap();
+                key_file_reader.read_to_end(&mut key_vec).unwrap();
 
-                match key_buf.len() {
+                match key_vec.len() {
                     16 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                        ]);
+                        let mut key_buf = [0u8; 16];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.encrypt_128(key);
                         let _ = output_file.write(block.as_vec().as_slice());
                     }
                     24 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                            key_buf[16],
-                            key_buf[17],
-                            key_buf[18],
-                            key_buf[19],
-                            key_buf[20],
-                            key_buf[21],
-                            key_buf[22],
-                            key_buf[23],
-                        ]);
+                        let mut key_buf = [0u8; 24];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.encrypt_192(key);
                         let _ = output_file.write(block.as_vec().as_slice());
                     }
                     32 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                            key_buf[16],
-                            key_buf[17],
-                            key_buf[18],
-                            key_buf[19],
-                            key_buf[20],
-                            key_buf[21],
-                            key_buf[22],
-                            key_buf[23],
-                            key_buf[24],
-                            key_buf[25],
-                            key_buf[26],
-                            key_buf[27],
-                            key_buf[28],
-                            key_buf[29],
-                            key_buf[30],
-                            key_buf[31],
-                        ]);
+                        let mut key_buf = [0u8; 32];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.encrypt_256(key);
@@ -156,104 +87,34 @@ fn main() {
                     panic!("Ciphertext length must be multiple of 16");
                 }
 
-                let mut key_buf = vec![];
+                let mut key_vec = vec![];
                 let key = File::open(keyfile).unwrap();
                 let mut key_file_reader = BufReader::new(key);
-                key_file_reader.read_to_end(&mut key_buf).unwrap();
+                key_file_reader.read_to_end(&mut key_vec).unwrap();
 
-                match key_buf.len() {
+                match key_vec.len() {
                     16 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                        ]);
+                        let mut key_buf = [0u8; 16];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.decrypt_128(key);
-                        let out = block.as_vec();
-                        let _ = output_file.write(out.as_slice());
+                        let _ = output_file.write(block.as_vec().as_slice());
                     }
                     24 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                            key_buf[16],
-                            key_buf[17],
-                            key_buf[18],
-                            key_buf[19],
-                            key_buf[20],
-                            key_buf[21],
-                            key_buf[22],
-                            key_buf[23],
-                        ]);
+                        let mut key_buf = [0u8; 24];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.decrypt_192(key);
                         let _ = output_file.write(block.as_vec().as_slice());
                     }
                     32 => {
-                        let key = Key::from([
-                            key_buf[0],
-                            key_buf[1],
-                            key_buf[2],
-                            key_buf[3],
-                            key_buf[4],
-                            key_buf[5],
-                            key_buf[6],
-                            key_buf[7],
-                            key_buf[8],
-                            key_buf[9],
-                            key_buf[10],
-                            key_buf[11],
-                            key_buf[12],
-                            key_buf[13],
-                            key_buf[14],
-                            key_buf[15],
-                            key_buf[16],
-                            key_buf[17],
-                            key_buf[18],
-                            key_buf[19],
-                            key_buf[20],
-                            key_buf[21],
-                            key_buf[22],
-                            key_buf[23],
-                            key_buf[24],
-                            key_buf[25],
-                            key_buf[26],
-                            key_buf[27],
-                            key_buf[28],
-                            key_buf[29],
-                            key_buf[30],
-                            key_buf[31],
-                        ]);
+                        let mut key_buf = [0u8; 32];
+                        key_buf.copy_from_slice(&key_vec);
+                        let key = Key::from(key_buf);
 
                         let mut block = State::new(buffer);
                         block.decrypt_256(key);
