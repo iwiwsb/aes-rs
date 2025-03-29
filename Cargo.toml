@@ -1,7 +1,9 @@
 [package]
 name = "aes"
 version = "0.1.0"
+authors = ["Alexander Filatov <30194859+iwiwsb@users.noreply.github.com>"]
 edition = "2024"
+rust-version = "1.85"
 publish = false
 
 [dependencies]
