@@ -1,16 +1,15 @@
-name: Rust
+name: Release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags: v[0-9]+.[0-9]+.[0-9]+
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build_on_ubuntu:
+  on_ubuntu:
+    name: Ubuntu release
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -24,7 +23,8 @@ jobs:
         name: x86_64-unknown-linux-gnu-aes
         path: ./target/release/aes
 
-  build_on_windows:
+  on_windows:
+    name: Windows release
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
@@ -38,16 +38,17 @@ jobs:
         name: x86_64-pc-windows-msvc-aes.exe
         path: ./target/release/aes.exe
 
-  build_on_macos:
-      runs-on: macos-latest
-      steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: cargo build --release --verbose
-      - name: Run tests
-        run: cargo test --release --verbose
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: x86_64-apple-darwin-aes
-          path: ./target/release/aes
+  on_macos:
+    name: MacOS release
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: cargo build --release --verbose
+    - name: Run tests
+      run: cargo test --release --verbose
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: x86_64-apple-darwin-aes
+        path: ./target/release/aes
